@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="wordnet">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/Classifier/Datasets/wordnet/corpora/wordnet.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
