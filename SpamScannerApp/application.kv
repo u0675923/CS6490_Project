@@ -19,6 +19,12 @@
                     source: 'Images/base_button.png'
                     center_x: self.parent.center_x
                     center_y: self.parent.center_y
+        
+        FloatLayout:
+            BoxBorder:
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: None, None
+                size: 300, 100
 
         CustomButton:
             text: 'R E C E N T   A C T I V I T Y'
@@ -52,4 +58,42 @@
         Line:
             width: 2.5
             rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
+<BoxBorder@BoxLayout>:
+    canvas:
+        Color:
+            rgba: 1, 1, 1, 1
+        Line:
+            width: 1
+            rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
 
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 5
+        padding: 5
+        TitleLabel:
+            id: num_messages
+            title: 'Messages Scanned:'
+        TitleLabel:
+            id: num_messages_found
+            title: 'Spam Messages Found:'
+        TitleLabel:
+            id: category_messages
+            title: 'Categories of Spam:'
+        TitleLabel:
+            id: program_runtime
+            title: 'Runtime:'        
+
+<TitleLabel@BoxLayout>:
+    orientation: 'horizontal'
+    title: ''
+    data: ''
+    Label:
+        text: root.title
+        size_hint_x: None
+        width: self.texture_size[0]
+    Label:
+        text: root.data
+        bold: True
+        size_hint_x: None
+        width: 50
+        valign: 'middle'
