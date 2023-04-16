@@ -3,6 +3,7 @@
 Created on Sun Mar 26 16:02:57 2023
 
 @author: Jacob Rogers
+@contributor: Seph Pace
 """
 import pandas as pd
 import numpy as np
@@ -34,6 +35,8 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
 # Used to stop network if performance drops
 from tensorflow.keras.callbacks import EarlyStopping
+# Used to optimize models
+import tensorflow_model_optimization as tfmot
 # Used for file/directory checks
 import os.path
 # Used to suppress a save trace warning 
@@ -93,7 +96,7 @@ class SpamClassifier:
         # Build tensors from mtx and train/test split
         self.xTrainTensor, self.yTrainTensor, self.xTestTensor, self.yTestTensor = self._buildClassTensor()
         
-        # Define train/validation tesnor split. Must convert tensor to np array
+        # Define train/validation tensor split. Must convert tensor to np array
         self.xTrainTensor, self.xValidateTensor, self.yTrainTensor, self.yValidateTensor = train_test_split(self.xTrainTensor.numpy(), self.yTrainTensor.numpy(), test_size=0.1, random_state=42)
         # then each numpy back to tensor. *eyeroll*
         self.xTrainTensor = tf.constant(self.xTrainTensor)
@@ -107,12 +110,20 @@ class SpamClassifier:
             print("Previous classifier found. Loading from memory.")
             self.model = tf.keras.models.load_model("Datasets/nnModel.h5")
             self._testNNModel()
+
+            if os.path.exists("Datasets/quantizedModel.tflite"):
+                with open("Datasets/quantizedModel.tflite", "rb") as file:
+                    quant = file.read()
+                    self._testTFLiteModel(quant)
+            else:
+                self._quantizeModel()
         # Build model from memory
         else:
             print("Building classifier model. Please wait.")
             self._buildNNModel()
             self._fitNNModel()
             self._testNNModel()
+            self._quantizeModel()
                 
     """
             Accepts a list of message arguments. Scans each message for a URL, EMAIL,
@@ -369,13 +380,43 @@ class SpamClassifier:
         self.model.fit(self.xTrainTensor, self.yTrainTensor, epochs = epochs, batch_size = batch_size, validation_data=(self.xValidateTensor, self.yValidateTensor), callbacks=[earlyStop])
         # Save the Keras model to a directory
         self.model.save("Datasets/nnModel.h5")
-        
-        
-        
+
     # Runs test on model based on fitted data and test data split
     def _testNNModel(self):
         test_loss, test_acc = self.model.evaluate(self.xTestTensor,  self.yTestTensor, verbose=2)
         print("\nTest accuracy:", test_acc)
+
+
+    # Quantizes the model to save memory
+    def _quantizeModel(self):
+        # Quantize the model
+        print("Quantizing the model...")
+        converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        quant_model_tflite = converter.convert()
+        # Save the quantized model to a directory
+        with open("Datasets/quantizedModel.tflite", "wb") as file:
+            file.write(quant_model_tflite)
+        # Test the quantized model
+        self._testTFLiteModel(quant_model_tflite)
+
+
+    # Runs test on the given quantized model
+    def _testTFLiteModel(self, model):
+        interpreter = tf.lite.Interpreter(model_content=model)
+        interpreter.allocate_tensors()
+        in_idx = interpreter.get_input_details()[0]["index"]
+        out_idx = interpreter.get_output_details()[0]["index"]
+        predicted_y = []
+        for x in self.xTestTensor:
+            x = np.expand_dims(x.numpy(), axis=0)
+            interpreter.set_tensor(in_idx, x)
+            interpreter.invoke()
+            y = interpreter.tensor(out_idx)
+            y = np.argmax(y()[0])
+            predicted_y.append(y)
+        quant_acc = (np.array(predicted_y) == self.yTestTensor.numpy()).mean()
+        print("\nQuantized test accuracy: ", quant_acc)
         
     """
     USER FUNCTIONALITY SECTION.
