@@ -22,6 +22,7 @@
         
         FloatLayout:
             BoxBorder:
+                id: box
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: None, None
                 size: 300, 100
@@ -87,6 +88,7 @@
     orientation: 'horizontal'
     title: ''
     data: ''
+    spacing: 25
     Label:
         text: root.title
         size_hint_x: None
