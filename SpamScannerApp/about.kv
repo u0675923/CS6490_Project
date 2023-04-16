@@ -1,0 +1,27 @@
+<AboutScreen>:
+    GridLayout:
+        cols: 1
+        spacing: 5
+        FloatLayout:   
+            size: self.parent.size 
+            Button:
+                size_hint: None, None
+                size: 40,40
+                pos_hint: {'x':0.001, 'top':0.999}
+                background_color: (0,0,0,0)
+                background_normal: ''
+
+                on_press: root.BackButtonPressed()
+                on_release: root.BackButtonReleased()
+                Image:
+                    id: back_button
+                    size_hint: None,None
+                    center_x: self.parent.center_x
+                    center_y: self.parent.center_y
+                    source: 'Images/back_button.png'
+            Label: 
+                text: 'Developers:\n\nAdrian Flores\nJake Rogers\nSeph Pace'
+                size_hint: 1,None
+                size: self.texture_size
+                pos_hint: {'center_x': 0.2, 'center_y': 0.8}
+                
