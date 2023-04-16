@@ -348,3 +348,14 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Output models
+Classifier/Datasets/*.h5
+Classifier/Datasets/*.tflite
+
+# Vim swap files
+*.swp
+*.swo
+
+# Virtual environment
+.venv
