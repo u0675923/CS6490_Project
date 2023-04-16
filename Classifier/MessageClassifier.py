@@ -389,7 +389,7 @@ class SpamClassifier:
     # Quantizes the model to save memory
     def _quantizeModel(self):
         # Quantize the model
-        print("Quantizing the model...")
+        print("\nQuantizing the model...")
         converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         quant_model_tflite = converter.convert()
