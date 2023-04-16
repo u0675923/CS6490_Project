@@ -47,7 +47,3 @@ class MyApp(App):
         sm.add_widget(main_screen)
 
         return sm
-
-
-if __name__ == '__main__':    
-    MyApp().run()

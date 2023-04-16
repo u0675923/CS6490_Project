@@ -353,6 +353,12 @@ MigrationBackup/
 Classifier/Datasets/*.h5
 Classifier/Datasets/*.tflite
 
+# Project output
+bin/
+
+# Buildozer
+.buildozer
+
 # Vim swap files
 *.swp
 *.swo
