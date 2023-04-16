@@ -115,6 +115,8 @@ class SpamClassifier:
                 with open("Datasets/quantizedModel.tflite", "rb") as file:
                     quant = file.read()
                     self._testTFLiteModel(quant)
+            else:
+                self._quantizeModel()
         # Build model from memory
         else:
             print("Building classifier model. Please wait.")
