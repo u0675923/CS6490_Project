@@ -3,7 +3,6 @@
 Created on Sun Mar 26 16:02:57 2023
 
 @author: Jacob Rogers
-@contributor: Seph Pace
 """
 import pandas as pd
 import numpy as np
@@ -35,8 +34,6 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
 # Used to stop network if performance drops
 from tensorflow.keras.callbacks import EarlyStopping
-# Used to optimize models
-import tensorflow_model_optimization as tfmot
 # Used for file/directory checks
 import os.path
 # Used to suppress a save trace warning 
@@ -96,7 +93,7 @@ class SpamClassifier:
         # Build tensors from mtx and train/test split
         self.xTrainTensor, self.yTrainTensor, self.xTestTensor, self.yTestTensor = self._buildClassTensor()
         
-        # Define train/validation tensor split. Must convert tensor to np array
+        # Define train/validation tesnor split. Must convert tensor to np array
         self.xTrainTensor, self.xValidateTensor, self.yTrainTensor, self.yValidateTensor = train_test_split(self.xTrainTensor.numpy(), self.yTrainTensor.numpy(), test_size=0.1, random_state=42)
         # then each numpy back to tensor. *eyeroll*
         self.xTrainTensor = tf.constant(self.xTrainTensor)
@@ -380,7 +377,9 @@ class SpamClassifier:
         self.model.fit(self.xTrainTensor, self.yTrainTensor, epochs = epochs, batch_size = batch_size, validation_data=(self.xValidateTensor, self.yValidateTensor), callbacks=[earlyStop])
         # Save the Keras model to a directory
         self.model.save("Datasets/nnModel.h5")
-
+        
+        
+        
     # Runs test on model based on fitted data and test data split
     def _testNNModel(self):
         test_loss, test_acc = self.model.evaluate(self.xTestTensor,  self.yTestTensor, verbose=2)
@@ -390,7 +389,7 @@ class SpamClassifier:
     # Quantizes the model to save memory
     def _quantizeModel(self):
         # Quantize the model
-        print("Quantizing the model...")
+        print("\nQuantizing the model...")
         converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         quant_model_tflite = converter.convert()
@@ -418,6 +417,7 @@ class SpamClassifier:
         quant_acc = (np.array(predicted_y) == self.yTestTensor.numpy()).mean()
         print("\nQuantized test accuracy: ", quant_acc)
         
+
     """
     USER FUNCTIONALITY SECTION.
     
