@@ -1,9 +1,24 @@
 <AboutScreen>:
-    GridLayout:
-        cols: 1
-        spacing: 5
-        FloatLayout:   
-            size: self.parent.size 
+    ScrollView:
+        do_scroll_y: True
+        do_scroll_x: False
+        size_hint: 1, 1
+        pos_hint: {'center_x':0.5,'center_y':0.5}
+        canvas.before:
+            Color:
+                rgba: (0,0,0,0.5)
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+            Line:
+                width: 2.5
+                rounded_rectangle: (self.x, self.y, self.width, self.height, 10)
+        BoxLayout:
+            orientation: 'vertical'
+            padding: 10
+            spacing: 10
+            size_hint_y: None
+            height: self.minimum_height
             Button:
                 size_hint: None, None
                 size: 40,40
@@ -19,9 +34,107 @@
                     center_x: self.parent.center_x
                     center_y: self.parent.center_y
                     source: 'Images/back_button.png'
-            Label: 
-                text: 'Developers:\n\nAdrian Flores\nJake Rogers\nSeph Pace'
-                size_hint: 1,None
-                size: self.texture_size
-                pos_hint: {'center_x': 0.2, 'center_y': 0.8}
+
+            Label:
+                markup: True
+                text: '[b]Developers:[/b]\n\nAdrian Flores\nJake Rogers\nSeph Pace'
+                text_size: 100, None
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: 1, None
+                halign: 'left'
+
+                canvas.before:
+                    Color:
+                        rgba: (1,1,1,0.3)
+                    RoundedRectangle:
+                        pos:self.pos
+                        size: self.size
+                    Line:
+                        width: 2.5
+                        rounded_rectangle: (self.x, self.y, self.width, self.height, 10)
+            Label:
+                markup: True
+                line_height: 1.5
+                text: "\n[b][u][size=24]Introduction[/size][/u][/b]\n\nIn the digital society we live in today, most people have experienced receiving spam in email, phone calls and text messages stating: 'You've won, Congratulations!' or 'Verify your bank account by clicking this link.' We have learned to be cautious when receiving these messages but there is still the annoyance of having to deal with them. In many cases, phishing messages are successful in tricking users to provide sensitive information to malicious parties and the threat of identity theft has become more prevalent as we intertwine our lives further with digital media. The need for protection against malicious parties has become more apparent, specifically, text messages are not as easily flagged as email or phone call spam, and as a result, adversaries are increasingly using the medium to purport attacks on unsuspecting victims. Our plan for this project is to combat the issue of the noticeably lacking feature to detect spam/phishing related text messages by creating an Android application that is able to provide a form of protection against these kinds of attacks."
+                size_hint_y: None     
+                height: self.texture_size[1]
+                text_size: self.width, None
+                halign: 'center'
+                valign: 'top'
+
+            Label:
+                markup: True
+                line_height: 1.5
+                text: "\n\n[b][u][size=24]Solution[/size][/u][/b]\n\nWe plan to use dataset(s) with known smishing (sms phishing messages) and valid messages, coupled with machine learning to create an application that runs in the background of a phone, scanning existing and incoming text messages and reliably detects potentially harmful messages to the user. We will analyze these datasets to create and train an agent that can effectively process text messages by examining key words used in the messages. A neural network will be utilized by learning to analyze the data in our SMS Phishing datasets. We will then be able to flag the messages as potential spam, and alert the user using notifications. We will be coding our project in Python using the Kivy framework for developing our application and will be using the PyTorch library for building the neural network classifier for spam and phishing detection. We believe the need for such an application is important for user security as similar functionality for email and phone calls is prevalent, but lags in the SMS department. "
+                size_hint_y: None     
+                height: self.texture_size[1]
+                text_size: self.width, None
+                halign: 'center'
+                valign: 'top'
+        # ScrollView:
+        #     do_scroll_y: True
+        #     do_scroll_x: False
+        #     size_hint: 1, 1
+        #     pos_hint: {'center_x':0.5,'center_y':0.5}
+        #     canvas.before:
+        #         Color:
+        #             rgba: (0,0,0,0.5)
+        #         RoundedRectangle:
+        #             pos: self.pos
+        #             size: self.size
+        #         Line:
+        #             width: 2.5
+        #             rounded_rectangle: (self.x, self.y, self.width, self.height, 10)
                 
+            # BoxLayout:
+            #     orientation: 'vertical'
+            #     size_hint_y: None
+            #     height: self.minimum_height
+
+            #     padding: 15
+                # Label:
+                #     markup: True
+                #     text: f"[size=24]<center>Introduction</center>[/size]\nIn the digital society we live in today, most people have experienced receiving spam in email, phone calls and text messages stating: “You’ve won, Congratulations!” or “Verify your bank account by clicking this link.” We have learned to be cautious when receiving these messages but there is still the annoyance of having to deal with them. In many cases, phishing messages are successful in tricking users to provide sensitive information to malicious parties and the threat of identity theft has become more prevalent as we intertwine our lives further with digital media. The need for protection against malicious parties has become more apparent, specifically, text messages are not as easily flagged as email or phone call spam, and as a result, adversaries are increasingly using the medium to purport attacks on unsuspecting victims. Our plan for this project is to combat the issue of the noticeably lacking feature to detect spam/phishing related text messages by creating an Android application that is able to provide a form of protection against these kinds of attacks."
+                #     size_hint_y: None     
+                #     height: self.texture_size[1]
+                #     text_size: self.width, None
+                #     halign: 'left'
+                #     valign: 'top'
+                # Label:
+                #     markup: True
+                #     text: "[size=24]Introduction[/size]\n\nIn the digital society we live in today, most people have experienced receiving spam in email, phone calls and text messages stating: “You’ve won, Congratulations!” or “Verify your bank account by clicking this link.” We have learned to be cautious when receiving these messages but there is still the annoyance of having to deal with them. In many cases, phishing messages are successful in tricking users to provide sensitive information to malicious parties and the threat of identity theft has become more prevalent as we intertwine our lives further with digital media. The need for protection against malicious parties has become more apparent, specifically, text messages are not as easily flagged as email or phone call spam, and as a result, adversaries are increasingly using the medium to purport attacks on unsuspecting victims. Our plan for this project is to combat the issue of the noticeably lacking feature to detect spam/phishing related text messages by creating an Android application that is able to provide a form of protection against these kinds of attacks."
+                #     size_hint_y: None     
+                #     height: self.texture_size[1]
+                #     text_size: self.width, None
+                #     halign: 'center'
+                #     valign: 'top'
+
+                
+        # GridLayout:
+        #     cols: 1
+        #     spacing: 5
+        #     FloatLayout:   
+        #         size: self.parent.size 
+        #         Button:
+        #             size_hint: None, None
+        #             size: 40,40
+        #             pos_hint: {'x':0.001, 'top':0.999}
+        #             background_color: (0,0,0,0)
+        #             background_normal: ''
+
+        #             on_press: root.BackButtonPressed()
+        #             on_release: root.BackButtonReleased()
+        #             Image:
+        #                 id: back_button
+        #                 size_hint: None,None
+        #                 center_x: self.parent.center_x
+        #                 center_y: self.parent.center_y
+        #                 source: 'Images/back_button.png'
+        #         Label: 
+        #             text: 'Developers:\n\nAdrian Flores\nJake Rogers\nSeph Pace'
+        #             size_hint: 1,None
+        #             size: self.texture_size
+        #             pos_hint: {'center_x': 0.2, 'center_y': 0.8}
+                
+
+
