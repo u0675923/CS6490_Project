@@ -1,8 +1,10 @@
 <ActivityScreen>:
-    FloatLayout:    
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(24)
+        padding: dp(12)
         Button:
             size_hint: None, None
-            size: 40,40
             pos_hint: {'x':0.001, 'top':0.999}
             background_color: (0,0,0,0)
             background_normal: ''
@@ -11,7 +13,8 @@
             on_release: root.BackButtonReleased()
             Image:
                 id: back_button
-                size_hint: None,None
+                #size_hint: 1,1
+                size: self.parent.width, self.parent.height
                 center_x: self.parent.center_x
                 center_y: self.parent.center_y
                 source: 'Images/back_button.png'

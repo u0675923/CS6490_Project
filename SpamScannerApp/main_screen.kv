@@ -1,50 +1,96 @@
 <MainScreen>:
-    GridLayout:
-        cols: 1
-        spacing: 50
-        padding: 50
-        FloatLayout:
-            Button:
-                pos_hint: {'center_x': 0.5, 'center_y': 0.8}
-                #size_hint: dp(500), dp(500)
-                background_color: (0,0,0,0)
-                background_normal: ''
+    RelativeLayout:    # using a relative layout, the elements can be placed manually    
+        Button:            
+            background_color: (0,0,0,0)
+            background_normal: ''
+            on_press: root.StatusButtonPressed()
+            on_release: root.StatusButtonReleased()
+            size_hint: 0.3,0.2 # size_hint is used to set the dimensions of the UI element w/ respect to the widget it is in
+            pos_hint: {'center_x': 0.5, 'center_y': 0.9} # example of placing a UI element manually
+            Image:
+                id: status_image
+                source: 'Images/base_button.png'
+                size: self.parent.size
+                pos: self.parent.pos
 
-                on_press:   root.StatusButtonPressed()
-                on_release: root.StatusButtonReleased()
-                Image:
-                    id: status_image
-                    source: 'Images/base_button.png'
-                    size: self.size
-                    center_x: self.parent.center_x
-                    center_y: self.parent.center_y
-        
-        FloatLayout:
-            BoxBorder:
-                id: box
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: None, None
-                size: 300, 100
+        BoxBorder:
+            id: box
+            pos_hint: {'center_x': 0.5, 'center_y': 0.7} # another example of placing a UI element manually
+            # the size of the element itself can also be manually set using dp()
+            size_hint: None, None
+            size: dp(350), dp(150)
 
         CustomButton:
-            text: 'R E C E N T   A C T I V I T Y'
-            on_press: root.ActivityButtonPressed()
+            text: 'A C T I V I T Y'
+            font_size: sp(20)
+            size_hint: 0.8, 0.1
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            background_color: (76/255, 91/255, 127/255, 1)
+            background_normal: ''
+
+            on_release: root.ActivityButtonPressed()
+
+            canvas.before:
+                Color:
+                    rgba: (self.background_color)
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+                Color:
+                    rgba: 1, 1, 1, 1  # white color for border
+                Line:
+                    width: 2.5
+                    rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
+
         CustomButton:
             text: 'S E T T I N G S'
-            on_press: root.SettingsButtonPressed()
-        CustomButton:
-            text: 'A B O U T'      
-            on_press: root.AboutButtonPressed()                     
+            font_size: sp(20)
+            size_hint: 0.8, 0.1
+            pos_hint: {'center_x': 0.5, 'center_y': 0.3}
+            background_color: (76/255, 91/255, 127/255, 1)
+            background_normal: ''
 
-# Custom UI Elements #
-<StatusButton@Button>:
-    size_hint: None, None
-    size_hint_x: 0.1
-    size_hint_y: 0.56
+            on_release: root.SettingsButtonPressed()
+            
+            canvas.before:
+                Color:
+                    rgba: (self.background_color)
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+                Color:
+                    rgba: 1, 1, 1, 1  # white color for border
+                Line:
+                    width: 2.5
+                    rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
+
+        CustomButton:
+            text: 'A B O U T'
+            font_size: sp(20)
+            size_hint: 0.8, 0.1
+            pos_hint: {'center_x': 0.5, 'center_y': 0.1}
+            background_color: (76/255, 91/255, 127/255, 1)
+            background_normal: ''
+
+            on_release: root.AboutButtonPressed()
+
+            canvas.before:
+                Color:
+                    rgba: (self.background_color)
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [10]
+                Color:
+                    rgba: 1, 1, 1, 1  # white color for border
+                Line:
+                    width: 2.5
+                    rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
 <CustomButton@Button>:
-    font_size: 20
-    size_hint_y: None
-    size: self.texture_size[0] + 20, 50
+    font_size: sp(20)
+    size_hint: 1,1
     background_normal: ''
     background_color: (76/255,91/255,127/255,1)
     canvas.before:
@@ -59,6 +105,7 @@
         Line:
             width: 2.5
             rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
+
 <BoxBorder@BoxLayout>:
     canvas:
         Color:
@@ -70,7 +117,7 @@
     BoxLayout:
         orientation: 'vertical'
         spacing: 5
-        padding: 5
+        padding: 10
         TitleLabel:
             id: num_messages
             title: 'Messages Scanned:'
@@ -88,7 +135,7 @@
     orientation: 'horizontal'
     title: ''
     data: ''
-    spacing: 25
+    spacing: dp(25)
     Label:
         text: root.title
         size_hint_x: None
