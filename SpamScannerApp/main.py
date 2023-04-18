@@ -49,7 +49,7 @@ class MainScreen(Screen):
             # stop program timer
             Clock.unschedule(self.UpdateTimeLabel)
             self.elapsed_time = 0
-            self.ids.box.ids.program_runtime.data = "00d 00m 00s"
+            self.ids.box.ids.program_runtime.data = "00m 00s"
 
             # update button image
             self.ids.status_image.source = self.off_status
