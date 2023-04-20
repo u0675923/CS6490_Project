@@ -10,6 +10,8 @@ from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.clock import Clock
 
 from kivy.utils import platform
+from android.permissions import request_permissions, Permission
+import plyer
 
 # from jnius import autoclass
 
@@ -118,6 +120,12 @@ class MyApp(App):
         # density = display_metrics.density
         # width_pixels = display_metrics.widthPixels
         # height_pixels = display_metrics.heightPixels
+
+        # Attempt to request permissions
+        permissions = [Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_SMS]
+
+        # Request the permissions
+        request_permissions(permissions)
 
         # load the kivy design files
         Builder.load_file('main_screen.kv')
