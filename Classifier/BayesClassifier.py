@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 18 16:20:31 2023
-
-@author: human
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Sun Mar 26 16:02:57 2023
 
 @author: Jacob Rogers
@@ -31,27 +24,21 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 # Used to scale values
 from sklearn.preprocessing import MaxAbsScaler
+# Multinomial naive bayes model
+from sklearn.naive_bayes import MultinomialNB
 
-# pip install tensorflow
-# Used for neural network
-import tensorflow as tf
-# Deep NN model
-from tensorflow.keras import Sequential
-# Deep NN layer
-from tensorflow.keras.layers import Dense
-# Used to stop network if performance drops
-from tensorflow.keras.callbacks import EarlyStopping
+
 # Used for file/directory checks
 import os.path
 # Used to suppress a save trace warning 
 import absl.logging
-# Needed to save the sparse matrix for easier loading/fitting
-from scipy.sparse import coo_matrix, save_npz, load_npz
+import pickle
+
 
 absl.logging.set_verbosity(absl.logging.ERROR)
 
 
-class SpamClassifier:
+class BayesClassifier:
     """ 
     Classifier constructor. 
         Attempts to load pre-built neural network model, dataframe structures
@@ -60,8 +47,14 @@ class SpamClassifier:
         saving the base data in Datasets/classifyDataFrame.csv and Datasets/nnModel.
     """
     def __init__(self):
+        
         self.vectorizer = TfidfVectorizer(stop_words=None)
         self.scaler = MaxAbsScaler()
+        self.df = None
+        self.xTrain = None
+        self.yTrain = None
+        self.xTest = None
+        self.yTest = None
     
         # Used in the word lemmatization. Download if needed, otherwise continue
         nltk.data.path.append("Datasets/wordnet")
@@ -71,35 +64,18 @@ class SpamClassifier:
             print("Downloading tools for language processing. This may take a few minutes.")
             nltk.download("wordnet", download_dir = "Datasets/wordnet/")
             
-        self.interpreter = None
-        if os.path.exists("Datasets/quantizedModel.tflite") and os.path.isfile("Datasets/classifyDataFrame.csv") and os.path.isfile("Datasets/scalerFitMtx.npz"):
+        # Load existing model in for a user.
+        if os.path.exists("Datasets/bayesClf.pkl") and os.path.isfile("Datasets/classifyDataFrame.csv"):
             # Fit the needed objects for transformin/scaling user data
             self.df = pd.read_csv("Datasets/classifyDataFrame.csv")
             self.vectorizer.fit(self.df.TEXT.tolist())
-            self.scaler.fit(load_npz("Datasets/scalerFitMtx.npz"))
-            
             print("Model found. Loading model from memory...")
-            # Load the TFLite model
-            self.interpreter = tf.lite.Interpreter(model_path="Datasets/quantizedModel.tflite")
+            # Load the naive bayes model
+            with open("Datasets/bayesClf.pkl", "rb") as f:
+                self.clf = pickle.load(f)
             print("Model loaded.")
                     
         else:
-            self.df = None
-            self.messages = None
-            self.xTrain = None
-            self.yTrain = None
-            self.xTest = None
-            self.yTest = None
-            self.xTrainTensor = None
-            self.yTrainTensor = None
-            self.xTestTensor = None
-            self.yTestTensor = None
-            self.xValidateTensor = None
-            self.yValidateTensor = None
-            self.vectorizer = TfidfVectorizer(stop_words=None)
-            self.scaler = MaxAbsScaler()
-            self.model = Sequential()
-        
             # Used in the word lemmatization. Download if needed, otherwise continue
             nltk.data.path.append("Datasets/wordnet")
             try:
@@ -110,7 +86,7 @@ class SpamClassifier:
         
             # Check if preformatted data file exists, if so, yay, we optimized! Otherwise
             # We have to dl og set, clean it, write it and carry on
-            if not os.path.isfile("Datasets/classifyDataFrame.csv") or not os.path.isfile("Datasets/scalerFitMtx.npz"):
+            if not os.path.isfile("Datasets/classifyDataFrame.csv"):
                 print("Initializing learning data. This may take awhile...")
                 self.df = self._createData()
                 # Transform strings through stemming and lemmatization
@@ -122,41 +98,17 @@ class SpamClassifier:
                 self.df = pd.read_csv("Datasets/classifyDataFrame.csv")
                 # Transform strings through stemming and lemmatization
                 self.vectorizer.fit(self.df.TEXT.tolist())
-                
-                
-            # Define train/test split     
-            self.xTrain, self.xTest, self.yTrain, self.yTest = train_test_split(self.df.drop(columns = ["LABEL"]), self.df.LABEL, test_size=0.3, random_state=42)
-            # Build tensors from mtx and train/test split
-            self.xTrainTensor, self.yTrainTensor, self.xTestTensor, self.yTestTensor = self._buildClassTensor()
-        
-            # Define train/validation tesnor split. Must convert tensor to np array
-            self.xTrainTensor, self.xValidateTensor, self.yTrainTensor, self.yValidateTensor = train_test_split(self.xTrainTensor.numpy(), self.yTrainTensor.numpy(), test_size=0.1, random_state=42)
-            # then each numpy back to tensor. *eyeroll*
-            self.xTrainTensor = tf.constant(self.xTrainTensor)
-            self.xValidateTensor = tf.constant(self.xValidateTensor)
-            self.yTrainTensor = tf.constant(self.yTrainTensor)
-            self.yValidateTensor = tf.constant(self.yValidateTensor)
-            # Message dist for eye candy
-            self.plotMessageDistribution()
+                 
             # If classifier has already been built, load from memory
-            if os.path.exists("Datasets/nnModel.h5"):
+            if os.path.exists("Datasets/bayesClf.pkl"):
                 print("Previous classifier found. Loading from memory.")
-                self.model = tf.keras.models.load_model("Datasets/nnModel.h5")
-                self._testNNModel()
-
-                if os.path.exists("Datasets/quantizedModel.tflite"):
-                    with open("Datasets/quantizedModel.tflite", "rb") as file:
-                        quant = file.read()
-                        self._testTFLiteModel(quant)
-                else:
-                    self._quantizeModel()
-                    # Build model from memory
+                # load the saved classifier
+                with open("Datasets/bayesClf.pkl", "rb") as f:
+                    self.clf = pickle.load(f)
+                self._testBayesModel()
             else:
                 print("Building classifier model. Please wait.")
-                self._buildNNModel()
-                self._fitNNModel()
-                self._testNNModel()
-                self._quantizeModel()
+                self._buildBayesModel()
                 
     """
             Accepts a list of message arguments. Scans each message for a URL, EMAIL,
@@ -326,9 +278,6 @@ class SpamClassifier:
         transformMatrix = self.vectorizer.transform(df.TEXT.tolist())
         return transformMatrix
     
-    # Scales given data through maxAbs operation
-    def scaleData(self, data):
-        return self.scaler.transform(data)
     
     """
         Concatenates the three other attributes of df (URL, PHONE, EMAIL) with
@@ -350,18 +299,14 @@ class SpamClassifier:
             concatenation of text2vec matrix and other base attributes and converts
             all train/test datasets to tensors (an n-dimensional set of matrices)
     """
-    def _buildClassTensor(self):
+    def _buildClassMatrices(self):
         # Build word mapped to value matrix
         xTrainMtx = self.text2Vec(self.xTrain)
         xTestMtx = self.text2Vec(self.xTest)
         
-        # Save the xTrainMtx so we can fit scaler on later loads
-        save_npz('Datasets/scalerFitMtx.npz', xTrainMtx)
-
-        
         # scale data
         xTrainMtx = self.scaler.fit_transform(xTrainMtx)
-        xTestMtx = self.scaleData(xTestMtx)
+        xTestMtx = self.scaler.fit_transform(xTestMtx)
         
         # drop og text as it's not used
         self.xTrain = self.xTrain.drop(columns = ["TEXT"])
@@ -371,91 +316,62 @@ class SpamClassifier:
         xTrainMtx = self._concatMtxWithDf(xTrainMtx, self.xTrain)
         xTestMtx = self._concatMtxWithDf(xTestMtx, self.xTest)
         
-        # Convert matrice to tensors as input into NN
-        xTrainTensor = tf.convert_to_tensor(xTrainMtx.astype("float32"))
-        yTrainTensor = tf.convert_to_tensor(self.yTrain.astype("float32"))
-        xTestTensor = tf.convert_to_tensor(xTrainMtx.astype("float32"))
-        yTestTensor = tf.convert_to_tensor(self.yTrain.astype("float32"))
-        
-        # Save xTrainTensor to fit v
-        
-        return(xTrainTensor, yTrainTensor, xTestTensor, yTestTensor)
+        return(xTrainMtx, xTestMtx)
 
 
     """ 
     CLASSIFICATION SECTION.
     
-        We're using a deep neural network as our classifier. The peformance outweighs efficiency of 
-        other basic classifiers (Naive Bayes/SGD) and is tuned to be fairly efficient computationally.
-        The initial layer accepts the input shape of the training tensor (this is the number of inputs 
-                                                                          going into a black box that does some maths to compute an output).
-        The activation of each layer is the maths of the black box, using relu: 
-        a linear function that return max(x, 0). Each layer halves the number of inputs into the next layer
-        until we reach the final layer, with an output of 3 (an output for each type of message: 0, 1, 2).
-        Softmax calculates the probability distribution of the given NN outputs over the output class types.
+        We're using a Naive multinomial Baye's net classifier.
+        A Baye's classifier is one in which uses Baye's theorem: p(y|x) = p(y) * Π p(x_i|y)^{x_i}
+        to compute the probability distribution of an event given some known probability dist.
+        We are using the multinomial variation, which assumes a multinomial (discreet) distribution
+        This is particularly effective as we are generating a multinomial distribution
+        by the way we transform the strings to word vectors mapped in n dimensions.        
 
     """
-    def _buildNNModel(self):
-        # Initial input layer
-        self.model.add(Dense(256, input_shape=(self.xTrainTensor.shape[1],), activation="relu"))
-        # Hidden layer 1 with 128 output neurons
-        self.model.add(Dense(128, activation="relu"))
-        # Hidden layer 2 with 64 output neurons
-        self.model.add(Dense(64, activation = "relu"))
-        # Final layer. Output 3 nodes with softmax eq to calc prob dist over all classes
-        self.model.add(Dense(3, activation="softmax"))
-        # Compile built model using adam optimizer and sparsecatcrossentropy for probability optimization
-        self.model.compile(optimizer = "adam",
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-              metrics=["accuracy"])
-    """
-        Fits the network model to the tensors calculated earlier.
-        The number of epochs can be varied, but default is at 100 with an early stop to produce reliable and efficient results.
-        The batch size helps improve efficiency with a minor reduction in accuracy. Recommend to leave alone.
-    """ 
-    def _fitNNModel(self, epochs = 100, batch_size = 750):
-        # Define a break point if loss on validation set drops and doesn't improve after 10 epochs
-        earlyStop = EarlyStopping(monitor = "val_loss", patience = 10)
-        # Fit model
-        self.model.fit(self.xTrainTensor, self.yTrainTensor, epochs = epochs, batch_size = batch_size, validation_data=(self.xValidateTensor, self.yValidateTensor), callbacks=[earlyStop])
-        # Save the Keras model to a directory
-        self.model.save("Datasets/nnModel.h5")
+    def _buildBayesModel(self):
+        # Ensure train/test data is loaded in
+        self._loadTrainTestSet()
+        # Initialize and fit model
+        self.clf = MultinomialNB(class_prior = [0.638, 0.283, 0.079])
         
         
+        class_freq = np.array([0.638, 0.283, 0.079])
+        class_weight = 1 / class_freq
+        class_weight_norm = class_weight / np.sum(class_weight)
         
+        weights = np.ones(self.xTrain.shape[0])
+        indices = np.where(self.yTrain == 0)[0]
+        weights[indices] = class_weight_norm[0]
+        indices = np.where(self.yTrain == 1)[0]
+        weights[indices] = class_weight_norm[1]
+        indices = np.where(self.yTrain == 2)[0]
+        weights[indices] = class_weight_norm[2]
+        
+        self.clf.fit(self.xTrain, self.yTrain, sample_weight = weights)
+        # save the classifier to a file
+        with open("Datasets/bayesClf.pkl", "wb") as f:
+            pickle.dump(self.clf, f)
+        # Run test on built model
+        self._testBayesModel()
+
     # Runs test on model based on fitted data and test data split
-    def _testNNModel(self):
-        test_loss, test_acc = self.model.evaluate(self.xTestTensor,  self.yTestTensor, verbose=2)
-        print("\nTest accuracy:", test_acc)
+    def _testBayesModel(self):
+        # Ensure train/test data is loaded in
+        self._loadTrainTestSet()
+        
+        print("Score on training dataset: ", self.clf.score(self.xTrain, self.yTrain))
+        print("Score on testing dataset: ", self.clf.score(self.xTest, self.yTest))
 
-
-    # Quantizes the model to save memory
-    def _quantizeModel(self):
-        # Quantize the model
-        print("\nQuantizing the model...")
-        converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
-        converter.optimizations = [tf.lite.Optimize.DEFAULT]
-        quant_model_tflite = converter.convert()
-        tf.io.write_file("Datasets/quantizedModel.tflite", quant_model_tflite)
-        self.interpreter = tf.lite.Interpreter(model_path="Datasets/quantizedModel.tflite")
-        self._testTFLiteModel()
-
-
-    # Runs test on the given quantized model
-    def _testTFLiteModel(self):
-        self.interpreter.allocate_tensors()
-        in_idx = self.interpreter.get_input_details()[0]["index"]
-        out_idx = self.interpreter.get_output_details()[0]["index"]
-        predicted_y = []
-        for x in self.xTestTensor:
-            x = np.expand_dims(x.numpy(), axis=0)
-            self.interpreter.set_tensor(in_idx, x)
-            self.interpreter.invoke()
-            y = self.interpreter.tensor(out_idx)
-            y = np.argmax(y()[0])
-            predicted_y.append(y)
-        quant_acc = (np.array(predicted_y) == self.yTestTensor.numpy()).mean()
-        print("\nQuantized test accuracy: ", quant_acc)
+    def _loadTrainTestSet(self):
+        if(self.xTrain is None):
+            # Define train/test split     
+            self.xTrain, self.xTest, self.yTrain, self.yTest = train_test_split(self.df.drop(columns = ["LABEL"]), self.df.LABEL, test_size=0.3, random_state=42)
+            # Build tensors from mtx and train/test split
+            self.xTrain, self.xTest = self._buildClassMatrices()
+            # Message dist for eye candy
+            self.plotMessageDistribution()
         
 
     """
@@ -473,8 +389,8 @@ class SpamClassifier:
     """
     
     
-    # Helper function that performs the cleaning process and formation of tensor for 
-    # a given list of user's messages. Returns the user's input tensor.
+    # Helper function that performs the cleaning process and formation of matrix for 
+    # a given list of user's messages. Returns the user's input matrix.
     # WARNING: DO NOT USE WITH USER'S LABEL. ONLY ATTRIBUTES.
     def _cleanUserMessage(self, messageList):
         # Extract phone, url, email attributes for each message
@@ -483,40 +399,25 @@ class SpamClassifier:
         userDict = {"TEXT" : messageList, "URL" : url, "EMAIL": email, "PHONE": phone}
         # Init user df from dict
         userDf = pd.DataFrame(data = userDict)
+        
         # Clean each message (word stemm and lemmatization) 
         self._cleanText(userDf)
+        
         # Transform user text to matrix
         userMtx = self.text2Vec(userDf)
         # Scale data
-        userMtx = self.scaleData(userMtx)
+        userMtx = self.scaler.fit_transform(userMtx)
         # form complete user mtx by concatenating other attributes with text2Vec
         userMtx = self._concatMtxWithDf(userMtx, userDf)
-        # Convert matrice to tensors as input into NN
-        userTensor = tf.convert_to_tensor(userMtx.astype("float32"))
-        return userTensor
+        
+        return userMtx
         
     # Converts user messages to acceptable tensors, and runs through NN to calc prob dist
     # of message type. Returns the highest prob message classification for each message as a list.
     def predictMessages(self, messageList):
-        yPreds = []
         # Clean user's message and form tensor arg for NN
-        userTensor = self._cleanUserMessage(messageList)
-        # Return predictions of messages
-        # return(np.argmax(self.model.predict(userTensor), axis=1))
-               
-        # Get input and output tensors.
-        self.interpreter.allocate_tensors()
-        input_details = self.interpreter.get_input_details()
-        output_details = self.interpreter.get_output_details()
-        for i in range(userTensor.shape[0]):
-            # Set the input tensor
-            self.interpreter.set_tensor(input_details[0]['index'],tf.expand_dims(userTensor[i], axis=0))
-            # Run the inference
-            self.interpreter.invoke()
-            # Get the output tensor
-            yPreds.append(np.argmax(self.interpreter.get_tensor(output_details[0]['index'])))
-            
-        return yPreds
+        userMtx = self._cleanUserMessage(messageList)
+        return(self.clf.predict(userMtx))
         
         
     """
@@ -530,44 +431,13 @@ class SpamClassifier:
         # extract labels from dict
         labelsList = np.asarray(list(messageDict.values()))
         # Create message tensor for training
-        messageTensor = self._cleanUserMessage(messageList)
-        # Create label tensor for training
-        labelTensor = tf.convert_to_tensor(labelsList.astype("float32"))
+        messageMtx = self._cleanUserMessage(messageList)
+        # Perform fit (continues training from previous weights)
+        self.clf.partial_fit(messageMtx, labelsList)
         
-        
-        # Load the pre-trained model (if user has own model)
-        if os.path.isfile("Datasets/nnModel.h5"):
-            model = tf.keras.models.load_model('Datasets/nnModel.h5')
-        else:
-            print("No model to train!")
-            
-        # Freeze the layers of the pre-trained model to prevent them from being trained
-        for layer in model.layers:
-            layer.trainable = False
-                        
-        # Add two new hidden layer with ReLU activation
-        hidden_layer = Dense(32, activation='relu')(model.layers[-2].output)
-        hidden_layer2 = Dense(8, activation='relu')(hidden_layer)
-        
-        # Add a new output layer for the 3 classes to train
-        new_output = Dense(3, activation='softmax')(hidden_layer2)
-
-        # Create the new model with the new output layer
-        new_model = tf.keras.Model(inputs=model.input, outputs=new_output)
-        # Compile the model with an appropriate loss function and optimizer
-        new_model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(), optimizer='adam', metrics=['accuracy'])
-
-        # Train the model on the new data points
-        new_model.fit(messageTensor, labelTensor, epochs = 20, batch_size=1)
-        #new_model.save("Datasets/nnUserModel.h5")
-
-        
-        # Save user quantized model
-        converter = tf.lite.TFLiteConverter.from_keras_model(new_model)
-        converter.optimizations = [tf.lite.Optimize.DEFAULT]
-        quant_model_tflite = converter.convert()
-        tf.io.write_file("Datasets/quantizedModel.tflite", quant_model_tflite)
-        self.interpreter = tf.lite.Interpreter(model_path="Datasets/quantizedModel.tflite")
+        # save the classifier to a file
+        with open("Datasets/bayesClf.pkl", "wb") as f:
+            pickle.dump(self.clf, f)
         
     
 """ 
@@ -583,20 +453,14 @@ messages = ["Hello, my Maria , nice to meet you. I am looking for a gentle, hone
 
 # # This is a phishing-esque style message generated by chatgpt, lmao he can be tricked to create phishing message, despite his 'ethical' programming.
 messages.append("Dear customer, we are pleased to inform you that you have been selected for a special offer! Click the link below to claim your discount on our latest product line. Don't miss out on this amazing opportunity! https://fakeGeneratedlink.co")
-
-sc = SpamClassifier()
-# # We are hoping to acheive [1 1 1 1 1 2]
-print("Predicted classification of messages: ", sc.predictMessages(messages))
-
 # Form dictionary with correct label mapping
 appendDict = {messages[0] : 1, messages[1] : 1, messages[2] : 1, messages[3] : 1, messages[4]: 1, messages[5] : 2}
-# Test append to trainer
-sc.appendToTrainer(appendDict)
-# predict on messages once more
-print("Predicted classification of messages after training: ", sc.predictMessages(messages))
-sc._testTFLiteModel()
-
-
-
+bc = BayesClassifier()
+bc._testBayesModel()
+print("Predictions: ", bc.predictMessages(messages))
+print("Training classifier on messages.")
+bc.appendToTrainer(appendDict)
+print("Predictions after retraining model: ", bc.predictMessages(messages))
+bc._testBayesModel()
 
 
