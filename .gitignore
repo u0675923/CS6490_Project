@@ -365,3 +365,6 @@ bin/
 
 # Virtual environment
 .venv
+
+# Zone Identifiers
+**/*:Zone.Identifier
