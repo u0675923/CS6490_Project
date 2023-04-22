@@ -9,14 +9,14 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.clock import Clock
 
-from kivy.utils import platform
 from android.permissions import request_permissions, Permission
-import plyer
+from jnius import autoclass
+from kivy.utils import platform
 
-# from jnius import autoclass
-
-# library for displaying notifications to user
-#from plyer import notification
+# Used for getting the sms messages
+PythonActivity = autoclass('org.kivy.android.PythonActivity')
+Uri = autoclass('android.net.Uri')
+Cursor = autoclass('android.database.Cursor')
 
 
 class MainScreen(Screen):
@@ -89,6 +89,7 @@ class AboutScreen(Screen):
         self.ids.back_button.source = self.back_button
         self.manager.current = 'main_screen'
 
+
 class SettingsScreen(Screen):
     back_button = 'Images/back_button.png'
     back_button_pressed = 'Images/pressed_back_button.png'
@@ -101,6 +102,8 @@ class SettingsScreen(Screen):
         self.manager.current = 'main_screen'
 
 class ActivityScreen(Screen):
+    contentResolver = PythonActivity.mActivity.getContentResolver()
+
     back_button = 'Images/back_button.png'
     back_button_pressed = 'Images/pressed_back_button.png'
 
@@ -111,16 +114,32 @@ class ActivityScreen(Screen):
         self.ids.back_button.source = self.back_button
         self.manager.current = 'main_screen'
 
+    # method that gets messages in phone
+    def Do(self):
+        output = ""
+        
+        # column names (you can add others like: phone number, date, contact name etc.)
+        # **check docs for more information**
+        projection = ['address', 'body'] # address prints the phone number
+
+        # get the SMS content URI
+        uri = Uri.parse('content://sms')
+
+        # query the SMS table for all messages
+        # docs on ContentResolver: https://developer.android.com/reference/android/content/ContentResolver
+        cursor = self.contentResolver.query(uri, projection, None, None, None)
+
+        # loop through the messages in the inbox
+        while cursor.moveToNext():
+            address = cursor.getString(cursor.getColumnIndex('address'))
+            body = cursor.getString(cursor.getColumnIndex('body'))
+            output += (f'{address}: {body}\n')
+
+        # puts the ouput of the messages into the label in activity.kv
+        self.ids.test_label.text = output
+
 class MyApp(App):
     def build(self):
-        # activity = autoclass('org.kivy.android.PythonActivity').mActivity
-        # resources = activity.getResources()
-        # display_metrics = resources.getDisplayMetrics()
-
-        # density = display_metrics.density
-        # width_pixels = display_metrics.widthPixels
-        # height_pixels = display_metrics.heightPixels
-
         # Attempt to request permissions
         permissions = [Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_SMS]
 
@@ -133,12 +152,6 @@ class MyApp(App):
         Builder.load_file('settings.kv')
         Builder.load_file('about.kv')
 
-        # Config.set('graphics', 'width', str(int(width_pixels / density)))        
-        # Config.set('graphics', 'height', str(int(height_pixels / density)))
-        # Config.set('graphics', 'width', '360')
-        # Config.set('graphics', 'height', '640')
-
-        # Window.size = (360,640)
         Window.clearcolor = (52/255,57/255,68/255,1) # RGBA value
         
         sm = ScreenManager()

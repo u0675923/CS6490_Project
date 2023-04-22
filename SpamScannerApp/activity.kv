@@ -18,3 +18,21 @@
                 center_x: self.parent.center_x
                 center_y: self.parent.center_y
                 source: 'Images/back_button.png'
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: None, None
+            size: self.minimum_size
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            Button:
+                size_hint: None, None
+                size: dp(200), dp(50)
+                text: 'Button 1'
+                on_release: root.Do()
+                
+        Label:
+            id: test_label
+            size_hint_y: 0.1
+            text: 'The messages text will go here'
+            halign: "center"
+            valign: "middle"
