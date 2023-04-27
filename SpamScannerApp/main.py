@@ -12,12 +12,69 @@ from kivy.clock import Clock
 from android.permissions import request_permissions, Permission
 from jnius import autoclass
 from kivy.utils import platform
+import numpy as np
+import tflite_runtime as tflite
+
+# Used to vectorize users sms
+class TfidfVectorizer:
+    def __init__(self):
+        self.idf_dict = {}
+        
+    def fit_transform(self, corpus):
+        self.documents = corpus
+        self.word_count = sum(len(document) for document in corpus)
+        term_count = {}
+        
+        for document in corpus:
+            for term in document:
+                term_count[term] = term_count.get(term, 0) + 1
+                
+        for term, count in term_count.items():
+            self.idf_dict[term] = np.log(self.word_count / count)
+            
+        return self.transform(corpus)
+    
+    def transform(self, corpus):
+        vectors = []
+        
+        for document in corpus:
+            vector = np.zeros(len(self.idf_dict))
+            
+            for i, term in enumerate(self.idf_dict.keys()):
+                count = document.count(term)
+                tf = count / len(document)
+                idf = self.idf_dict[term]
+                vector[i] = tf * idf
+                
+            vectors.append(vector)
+        return vectors
+    
+class NN:
+    def __init__(self):
+        self.interpreter = tflite.interpreter.Interpreter(model_path="quantizedModel.tflite")
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+        self.interpreter.allocate_tensors()
+
+    def predict(self, vectors):
+        # Prepare input data for tflite model
+        input_data = np.array(vectors, dtype=np.float32)
+        self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
+        
+        # Perform prediction
+        self.interpreter.invoke()
+        output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
+        
+        return output_data.tolist()
+    
+
 
 # Used for getting the sms messages
 PythonActivity = autoclass('org.kivy.android.PythonActivity')
 Uri = autoclass('android.net.Uri')
 Cursor = autoclass('android.database.Cursor')
-
+smsVectorizer = TfidfVectorizer()
+classifier = NN()
 
 class MainScreen(Screen):
     # images used in program:
