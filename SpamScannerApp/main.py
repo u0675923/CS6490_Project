@@ -58,10 +58,11 @@ TensorBuffer = autoclass('org.tensorflow.lite.support.tensorbuffer.TensorBuffer'
 
 class NN:
     def __init__(self):
-        self.interpreter = Interpreter(File("quantizedModel.tflite"))
+        model = File(os.path.join(os.getcwd(), 'quantizedModel.tflite'))
+        self.interpreter = Interpreter(model)
         self.output_shape = self.interpreter.getOutputTensor(0).shape()
         self.output_type = self.interpreter.getOutputTensor(0).dataType(    )
-        self.interpreter.allocate_tensors()
+        self.interpreter.allocateTensors()
 
     def predict(self, vectors):
         # Prepare input data for tflite model
@@ -111,7 +112,8 @@ class MainScreen(Screen):
 
             # run the classifier here
             x = np.array(np.random.random_sample((1, 35056)), np.float32)
-            y = classifier.predict()
+            y = classifier.predict(x)
+            print(f'Model output: {y}')
 
             # update button image
             self.ids.status_image.source = self.on_status
