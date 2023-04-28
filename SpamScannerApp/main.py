@@ -13,7 +13,7 @@ from android.permissions import request_permissions, Permission
 from jnius import autoclass
 from kivy.utils import platform
 import numpy as np
-import tflite_runtime as tflite
+
 
 # Used to vectorize users sms
 class TfidfVectorizer:
@@ -48,22 +48,33 @@ class TfidfVectorizer:
                 
             vectors.append(vector)
         return vectors
-    
+
+
+# Used for classifying messages
+ByteBuffer = autoclass('java.nio.ByteBuffer')
+File = autoclass('java.io.File')
+Interpreter = autoclass('org.tensorflow.lite.Interpreter')
+TensorBuffer = autoclass('org.tensorflow.lite.support.tensorbuffer.TensorBuffer')
+
 class NN:
     def __init__(self):
-        self.interpreter = tflite.interpreter.Interpreter(model_path="quantizedModel.tflite")
-        self.input_details = self.interpreter.get_input_details()
-        self.output_details = self.interpreter.get_output_details()
+        self.interpreter = Interpreter(File("quantizedModel.tflite"))
+        self.output_shape = self.interpreter.getOutputTensor(0).shape()
+        self.output_type = self.interpreter.getOutputTensor(0).dataType(    )
         self.interpreter.allocate_tensors()
 
     def predict(self, vectors):
         # Prepare input data for tflite model
         input_data = np.array(vectors, dtype=np.float32)
-        self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
+        input_buffer = ByteBuffer.wrap(input_data.tobytes())
+
+        # Prepare the output buffer
+        output_buffer = TensorBuffer.createFixedSize(self.output_shape,
+                                                     self.output_type)
         
         # Perform prediction
-        self.interpreter.invoke()
-        output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
+        self.interpreter.run(input_buffer, output_buffer.getBuffer().rewind())
+        output_data = np.array(output_buffer.getFloatArray())
         
         return output_data.tolist()
     
@@ -99,6 +110,8 @@ class MainScreen(Screen):
             Clock.schedule_interval(self.UpdateTimeLabel, 1)
 
             # run the classifier here
+            x = np.array(np.random.random_sample((1, 35056)), np.float32)
+            y = classifier.predict()
 
             # update button image
             self.ids.status_image.source = self.on_status
