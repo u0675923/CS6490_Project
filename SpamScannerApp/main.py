@@ -1,4 +1,5 @@
 import time
+import os
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -8,57 +9,60 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.clock import Clock
-
+import android
 from android.permissions import request_permissions, Permission
-from jnius import autoclass
+from jnius import autoclass, PythonJavaClass, java_method
 from kivy.utils import platform
 import numpy as np
-
-
-# Used to vectorize users sms
-class TfidfVectorizer:
-    def __init__(self):
-        self.idf_dict = {}
-        
-    def fit_transform(self, corpus):
-        self.documents = corpus
-        self.word_count = sum(len(document) for document in corpus)
-        term_count = {}
-        
-        for document in corpus:
-            for term in document:
-                term_count[term] = term_count.get(term, 0) + 1
-                
-        for term, count in term_count.items():
-            self.idf_dict[term] = np.log(self.word_count / count)
-            
-        return self.transform(corpus)
-    
-    def transform(self, corpus):
-        vectors = []
-        
-        for document in corpus:
-            vector = np.zeros(len(self.idf_dict))
-            
-            for i, term in enumerate(self.idf_dict.keys()):
-                count = document.count(term)
-                tf = count / len(document)
-                idf = self.idf_dict[term]
-                vector[i] = tf * idf
-                
-            vectors.append(vector)
-        return vectors
-
 
 # Used for classifying messages
 ByteBuffer = autoclass('java.nio.ByteBuffer')
 File = autoclass('java.io.File')
 Interpreter = autoclass('org.tensorflow.lite.Interpreter')
 TensorBuffer = autoclass('org.tensorflow.lite.support.tensorbuffer.TensorBuffer')
+Stemmer = autoclass('opennlp.tools.stemmer.PorterStemmer')
+Lemmatizer = autoclass('opennlp.tools.lemmatizer.DictionaryLemmatizer')
 
+# Get the absolute path to the model file
+model_file = os.path.join(os.getcwd(), 'SpamScannerApp', 'assets', 'en-pos-maxent.bin')
+
+# Get the current activity context
+activity = autoclass('org.kivy.android.PythonActivity').mActivity
+context = activity.getApplicationContext()
+
+# Get the asset file descriptor
+asset_manager = context.getAssets()
+file_descriptor = asset_manager.openFd(model_file)
+
+# Create a FileInputStream from the file descriptor
+file_input_stream_class = autoclass('java.io.FileInputStream')
+file_input_stream = file_input_stream_class(file_descriptor.getFileDescriptor())
+
+# Create the POSModel from the FileInputStream
+pos_model_class = autoclass('opennlp.tools.postag.POSModel')
+pos_model = pos_model_class(file_input_stream)
+
+#POSTaggerME = autoclass('opennlp.tools.postag.POSTaggerME')
+
+
+# Used to vectorize users sms
+class smsTransformer:
+    def __init__(self):
+        self.stemmer = Stemmer()
+        lemmFile = File(os.path.join(os.getcwd(), 'assets/en-lemmatizer.dict'))
+        self.lemmatizer = Lemmatizer(lemmFile)
+        #self.tagger = POSTaggerME(posModel)
+
+    def stem(self, word):
+        self.stemmer.stem(word)
+        wordStem = self.stemmer.toString()
+        return str(wordStem)
+
+    def lemmatize(self, wordList):
+        return(self.lemmatizer.lemmatize(wordList))
 class NN:
     def __init__(self):
-        model = File(os.path.join(os.getcwd(), 'quantizedModel.tflite'))
+        model = File(os.path.join(os.getcwd(), 'assets/quantizedModel.tflite'))
         self.interpreter = Interpreter(model)
         self.output_shape = self.interpreter.getOutputTensor(0).shape()
         self.output_type = self.interpreter.getOutputTensor(0).dataType(    )
@@ -85,7 +89,7 @@ class NN:
 PythonActivity = autoclass('org.kivy.android.PythonActivity')
 Uri = autoclass('android.net.Uri')
 Cursor = autoclass('android.database.Cursor')
-smsVectorizer = TfidfVectorizer()
+smsVectorizer = smsTransformer()
 classifier = NN()
 
 class MainScreen(Screen):
@@ -208,6 +212,8 @@ class ActivityScreen(Screen):
             output += (f'{address}: {body}\n')
 
         # puts the ouput of the messages into the label in activity.kv
+        tokens = ['testing', 'tested', 'tests']
+        # lemmTokens = smsTransformer.lemmatize(tokens)
         self.ids.test_label.text = output
 
 class MyApp(App):
