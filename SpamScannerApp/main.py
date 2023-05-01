@@ -150,7 +150,12 @@ class ActivityScreen(Screen):
 class MyApp(App):
     def build(self):
         # Attempt to request permissions
-        permissions = [Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_SMS]
+        permissions = [
+            Permission.READ_EXTERNAL_STORAGE,
+            Permission.WRITE_EXTERNAL_STORAGE,
+            Permission.READ_SMS,
+            Permission.FOREGROUND_SERVICE
+        ]
 
         # Request the permissions
         request_permissions(permissions)
