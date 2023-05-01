@@ -18,6 +18,9 @@ PythonActivity = autoclass('org.kivy.android.PythonActivity')
 Uri = autoclass('android.net.Uri')
 Cursor = autoclass('android.database.Cursor')
 
+# Set up the spam scanner service
+spam_scanner_service = autoclass("org.test.spamscanner.ServiceSpamscanner")
+
 
 class MainScreen(Screen):
     # images used in program:
@@ -36,6 +39,9 @@ class MainScreen(Screen):
         if not self.program_running:
             self.program_running = True
 
+            # Start the service
+            spam_scanner_service.start(PythonActivity.mActivity, "")
+
             # start program timer
             self.start = time.time()
             self.elapsed_time = 0
@@ -47,6 +53,9 @@ class MainScreen(Screen):
             self.ids.status_image.source = self.on_status
         else:
             self.program_running = False
+
+            # Stop the service
+            spam_scanner_service.stop(PythonActivity.mActivity)
             
             # stop program timer
             Clock.unschedule(self.UpdateTimeLabel)
@@ -169,6 +178,7 @@ class MyApp(App):
         sm.add_widget(activity_screen)
 
         return sm
+
 
 if __name__ == '__main__':
     MyApp().run()
