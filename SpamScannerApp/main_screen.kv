@@ -13,59 +13,6 @@
                 size: self.parent.size
                 pos: self.parent.pos
 
-        BoxBorder:
-            id: box
-            pos_hint: {'center_x': 0.5, 'center_y': 0.7} # another example of placing a UI element manually
-            # the size of the element itself can also be manually set using dp()
-            size_hint: None, None
-            size: dp(350), dp(150)
-
-        CustomButton:
-            text: 'A C T I V I T Y'
-            font_size: sp(20)
-            size_hint: 0.8, 0.1
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            background_color: (76/255, 91/255, 127/255, 1)
-            background_normal: ''
-
-            on_release: root.ActivityButtonPressed()
-
-            canvas.before:
-                Color:
-                    rgba: (self.background_color)
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: [10]
-                Color:
-                    rgba: 1, 1, 1, 1  # white color for border
-                Line:
-                    width: 2.5
-                    rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
-
-        CustomButton:
-            text: 'S E T T I N G S'
-            font_size: sp(20)
-            size_hint: 0.8, 0.1
-            pos_hint: {'center_x': 0.5, 'center_y': 0.3}
-            background_color: (76/255, 91/255, 127/255, 1)
-            background_normal: ''
-
-            on_release: root.SettingsButtonPressed()
-            
-            canvas.before:
-                Color:
-                    rgba: (self.background_color)
-                RoundedRectangle:
-                    pos: self.pos
-                    size: self.size
-                    radius: [10]
-                Color:
-                    rgba: 1, 1, 1, 1  # white color for border
-                Line:
-                    width: 2.5
-                    rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
-
         CustomButton:
             text: 'A B O U T'
             font_size: sp(20)
