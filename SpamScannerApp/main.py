@@ -133,9 +133,9 @@ class NN:
         # Perform prediction
         self.interpreter.run(input_buffer, output_buffer.getBuffer().rewind())
         output_data = np.array(output_buffer.getFloatArray())
-        if np.argmax(output_data) < 1:
+        if np.argmax(output_data) == 0:
             str = "ham"
-        elif np.argmax(output_data) > 1.5:
+        elif np.argmax(output_data) == 2:
             str = "phishing"
         else:
             str = "spam"
