@@ -36,11 +36,15 @@ class MainScreen(Screen):
 
             # Start the service
             spam_scanner_service.start(PythonActivity.mActivity, "")
+
+            self.ids.status_image.source = self.on_status
         else:
             self.program_running = False
 
             # Stop the service
             spam_scanner_service.stop(PythonActivity.mActivity)
+
+            self.ids.status_image.source = self.off_status
 
     
     # Buttons for switching screens
