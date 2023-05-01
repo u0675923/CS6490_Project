@@ -154,7 +154,8 @@ class MyApp(App):
             Permission.READ_EXTERNAL_STORAGE,
             Permission.WRITE_EXTERNAL_STORAGE,
             Permission.READ_SMS,
-            Permission.FOREGROUND_SERVICE
+            Permission.FOREGROUND_SERVICE,
+            Permission.POST_NOTIFICATIONS,
         ]
 
         # Request the permissions
