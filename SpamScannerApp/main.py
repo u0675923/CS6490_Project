@@ -121,14 +121,11 @@ class NN:
         self.output_shape = self.interpreter.getOutputTensor(0).shape()
         self.output_type = self.interpreter.getOutputTensor(0).dataType()
         self.interpreter.allocateTensors()
-        self.label_map = {0: "ham", 1: "spam", 2: "phishing"}
 
-    def predict(self, vectors):
+    def _predictSms(self, vectors):
         # Prepare input data for tflite model
         input_data = np.array(vectors, dtype=np.float32)
-        
         input_buffer = ByteBuffer.wrap(input_data.tobytes())
-
         # Prepare the output buffer
         output_buffer = TensorBuffer.createFixedSize(self.output_shape,
                                                      self.output_type)
@@ -136,12 +133,21 @@ class NN:
         # Perform prediction
         self.interpreter.run(input_buffer, output_buffer.getBuffer().rewind())
         output_data = np.array(output_buffer.getFloatArray())
-        output_data = output_data.tolist()
-        str_list = []
-        for val in output_data.tolist():
-            str_list.append(self.label_map[val])
-        
-        return str_list
+        if np.argmax(output_data) < 0.5:
+            str = "ham"
+        elif np.argmax(output_data) >= 1:
+            str = "phishing"
+        else:
+            str = "spam"
+        return str
+    
+    def predict(self, vectors):
+        str = ""
+
+        for i in range(len(vectors) - 1):
+            str += self._predictSms(vectors[i]) + ", "
+        str += self._predictSms(vectors[i + 1])
+        return str
     
 
 
@@ -272,7 +278,7 @@ class ActivityScreen(Screen):
             output += (f'{address}: {body}\n')
 
         # puts the ouput of the messages into the label in activity.kv
-        tokens = ['testing', 'tested', 'tests']
+        tokens = ['testing', "You're Netflix account has been compromised! Please click the link and enter your password to save your account: https//www.test.co", "Hey, this is Kat, how you doing today??", "You could save a BUNDLE with testingNonsense car insurance today!"]
         # lemmTokens = smsTransformer.lemmatize(tokens)
         vectors = smsVectorizer.smsToVector(tokens)
         preds = classifier.predict(vectors)
