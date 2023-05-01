@@ -13,7 +13,7 @@ package.domain = org.test
 source.dir = SpamScannerApp
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,tflite,dict,bin
+source.include_exts = py,png,jpg,kv,atlas,tflite,dict,py,txt
 
 # (list) List of inclusions using pattern matching
 source.include_patterns = assets/*
