@@ -13,7 +13,7 @@ Seph Pace
 
 This project is built using [Buildozer](https://buildozer.readthedocs.io/en/latest/),
 which is a mobile application package compiler for Python. It can be installed
-through pip](https://buildozer.readthedocs.io/en/latest/installation.html) 
+through [pip](https://buildozer.readthedocs.io/en/latest/installation.html) 
 or built using Docker, with instructions on the [Buildozer source page](https://github.com/kivy/buildozer).
 
 If installed with pip, the project can be built with the following command, which will place the project apk
